@@ -1,0 +1,28 @@
+name: E2E Monitor STAC (dev)
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install requests opentelemetry-sdk opentelemetry-exporter-otlp-proto-http
+
+      - name: Configure environment
+        run: |
+          echo "PYTHONPATH=$GITHUB_WORKSPACE/scripts" >> $GITHUB_ENV
+          echo "STAC_URL=https://dev.stac.eodc.eu/api/v1" >> $GITHUB_ENV
+          echo "E2E_ENV=dev"                               >> $GITHUB_ENV
+          echo "OTEL_ENDPOINT=https://otel.infra.eodc.eu/v1/metrics" >> $GITHUB_ENV
+
+      - name: Run availability probes
+        run: python scripts/test_stac_availability.py

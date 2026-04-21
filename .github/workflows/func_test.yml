@@ -1,0 +1,44 @@
+name: Functional Tests (STAC)
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  push:
+    branches:
+      - main
+    paths:
+      - "scripts/test_stac_functional.py"
+      - "scripts/conftest.py"
+  workflow_dispatch:
+    inputs:
+      collection:
+        description: "Collection ID to test (leave empty for auto-detect)"
+        required: false
+        default: ""
+
+jobs:
+  functional-dev:
+    name: Functional (dev)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install requests opentelemetry-sdk opentelemetry-exporter-otlp-proto-http pytest
+
+      - name: Configure environment
+        run: |
+          echo "PYTHONPATH=$GITHUB_WORKSPACE/scripts"       >> $GITHUB_ENV
+          echo "STAC_URL=https://dev.stac.eodc.eu/api/v1"  >> $GITHUB_ENV
+          echo "E2E_ENV=dev"                                >> $GITHUB_ENV
+          echo "OTEL_ENDPOINT=https://otel.infra.eodc.eu/v1/metrics" >> $GITHUB_ENV
+          echo "INGEST_URL=${{ secrets.INGEST_URL }}"       >> $GITHUB_ENV
+          echo "INGEST_USER=${{ secrets.INGEST_USER }}"     >> $GITHUB_ENV
+          echo "INGEST_PASSWORD=${{ secrets.INGEST_PASSWORD }}" >> $GITHUB_ENV
+          echo "STAC_FUNCTIONAL_COLLECTION=${{ github.event.inputs.collection }}" >> $GITHUB_ENV
+
+      - name: Run functional tests
+        run: pytest scripts/test_stac_functional.py -v --tb=short

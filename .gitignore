@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+*.egg-info/
+MONITORING.md
+debug_asset.py
+results/
+logs/
+grafana/
+json_backup.json
