@@ -6,6 +6,7 @@ from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExp
 from opentelemetry.sdk.resources import Resource
 
 OTEL_ENDPOINT = os.environ.get("OTEL_ENDPOINT", "https://otel.infra.eodc.eu/v1/metrics")
+OTEL_API_KEY  = os.environ.get("OTEL_API_KEY")
 
 RESOURCE = Resource(attributes={
     "environment":  os.environ.get("E2E_ENV", "dev"),
@@ -24,7 +25,8 @@ _gauges: dict = {}
 def _init():
     global _provider, _meter
     if _provider is None:
-        exporter  = OTLPMetricExporter(endpoint=OTEL_ENDPOINT)
+        headers   = {"Authorization": f"Bearer {OTEL_API_KEY}"} if OTEL_API_KEY else {}
+        exporter  = OTLPMetricExporter(endpoint=OTEL_ENDPOINT, headers=headers)
         reader    = PeriodicExportingMetricReader(exporter, export_interval_millis=3_600_000)
         _provider = MeterProvider(metric_readers=[reader], resource=RESOURCE)
         _meter    = _provider.get_meter("eodc.e2e")

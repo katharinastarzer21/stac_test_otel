@@ -23,6 +23,7 @@ jobs:
           echo "STAC_URL=https://dev.stac.eodc.eu/api/v1" >> $GITHUB_ENV
           echo "E2E_ENV=dev"                               >> $GITHUB_ENV
           echo "OTEL_ENDPOINT=https://otel.infra.eodc.eu/v1/metrics" >> $GITHUB_ENV
+          echo "OTEL_API_KEY=${{ secrets.OTEL_API_KEY }}"           >> $GITHUB_ENV
 
       - name: Run availability probes
         run: python scripts/test_stac_availability.py

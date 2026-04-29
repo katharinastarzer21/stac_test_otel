@@ -40,6 +40,7 @@ jobs:
           echo "E2E_ENV=$STAC_ENV"                          >> $GITHUB_ENV
           echo "PYTHONPATH=$GITHUB_WORKSPACE/scripts"       >> $GITHUB_ENV
           echo "OTEL_ENDPOINT=https://otel.infra.eodc.eu/v1/metrics" >> $GITHUB_ENV
+          echo "OTEL_API_KEY=${{ secrets.OTEL_API_KEY }}"           >> $GITHUB_ENV
           echo "STAC_PERF_COLLECTION=${{ github.event.inputs.collection }}" >> $GITHUB_ENV
 
       - name: Run performance test
