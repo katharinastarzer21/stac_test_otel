@@ -73,8 +73,8 @@ def push_metrics(all_stages):
 
     for vu_count, stats in all_stages.items():
         for endpoint, s in stats.items():
-            safe  = endpoint.replace(" ", "").replace("/", "_").replace("{", "").replace("}", "").strip("_")
-            ratio = s["p95"] / baseline[endpoint]["p95"] if baseline.get(endpoint, {}).get("p95") else 1.0
+            # endpoint is already sanitised (e.g. "POST_search", "GET_collections_id_items")
+            ratio = s["p95"] / baseline.get(endpoint, {}).get("p95", s["p95"]) if baseline.get(endpoint, {}).get("p95") else 1.0
             record(
                 {"eodc_e2e_perf_p95_seconds":        s["p95"],
                  "eodc_e2e_perf_rps":                s["rps"],
@@ -82,7 +82,7 @@ def push_metrics(all_stages):
                  "eodc_e2e_perf_vus":                float(vu_count),
                  "eodc_e2e_perf_slowdown_ratio":     ratio,
                  "eodc_e2e_perf_last_run_timestamp": now},
-                {"env": ENV, "service": "stac", "endpoint": safe, "vus": str(vu_count)},
+                {"env": ENV, "service": "stac", "endpoint": endpoint, "vus": str(vu_count)},
             )
             log.info("staged  vu=%3d  endpoint=%-30s  p95=%.3fs  rps=%.1f  slowdown=%.2fx",
                      vu_count, endpoint, s["p95"], s["rps"], ratio)
@@ -104,14 +104,26 @@ def main():
         env.runner.stop()
         gevent.sleep(1)
 
-        all_stages[vu_count] = {
-            name: {"p95": (entry.get_response_time_percentile(0.95) or 0) / 1000,
-                   "rps": entry.total_rps,
-                   "err": entry.fail_ratio}
-            for (_, name), entry in env.stats.entries.items()
-        }
-        for name, s in all_stages[vu_count].items():
-            log.info("  %s  p95=%.3fs  rps=%.1f  err=%.1f%%", name, s["p95"], s["rps"], s["err"] * 100)
+        stage_stats = {}
+        for (method, name), entry in env.stats.entries.items():
+            log.info("  locust entry: method=%r  name=%r", method, name)
+            if not name or name == "Aggregated":
+                continue
+            # Build a clean label: strip duplicate method prefix from name, then sanitise
+            path = name[len(method):].strip(" /") if name.startswith(method) else name.strip(" /")
+            if path:
+                safe_name = f"{method}_{path}".replace(" ", "_").replace("/", "_").replace("{", "").replace("}", "").replace("__", "_").strip("_")
+            else:
+                safe_name = method
+            stage_stats[safe_name] = {
+                "p95": (entry.get_response_time_percentile(0.95) or 0) / 1000,
+                "rps": entry.total_rps,
+                "err": entry.fail_ratio,
+            }
+            log.info("  -> safe_name=%r  p95=%.3fs  rps=%.1f  err=%.1f%%",
+                     safe_name, stage_stats[safe_name]["p95"],
+                     stage_stats[safe_name]["rps"], stage_stats[safe_name]["err"] * 100)
+        all_stages[vu_count] = stage_stats
 
     push_metrics(all_stages)
     env.runner.quit()
