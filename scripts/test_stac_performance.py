@@ -31,7 +31,7 @@ class StacUser(HttpUser):
 
     @task
     def search_post(self):
-        self.client.post("/search", name="POST /search", json={
+        self.client.post("/search", name="POST_search", json={
             "datetime":    self._random_datetime(),
             "intersects":  self._random_polygon(),
             "collections": self._random_collections(),
@@ -42,7 +42,7 @@ class StacUser(HttpUser):
     def get_items(self):
         col = random.choice(self._collections) if self._collections else "unknown"
         self.client.get(f"/collections/{col}/items", params={"limit": 10},
-                        name="GET /collections/{id}/items")
+                        name="GET_collections_id_items")
 
     @staticmethod
     def _random_datetime():
@@ -73,7 +73,6 @@ def push_metrics(all_stages):
 
     for vu_count, stats in all_stages.items():
         for endpoint, s in stats.items():
-            # endpoint is already sanitised (e.g. "POST_search", "GET_collections_id_items")
             ratio = s["p95"] / baseline.get(endpoint, {}).get("p95", s["p95"]) if baseline.get(endpoint, {}).get("p95") else 1.0
             record(
                 {"eodc_e2e_perf_p95_seconds":        s["p95"],
@@ -104,26 +103,15 @@ def main():
         env.runner.stop()
         gevent.sleep(1)
 
-        stage_stats = {}
-        for (method, name), entry in env.stats.entries.items():
-            log.info("  locust entry: method=%r  name=%r", method, name)
-            if not name or name == "Aggregated":
-                continue
-            # Build a clean label: strip duplicate method prefix from name, then sanitise
-            path = name[len(method):].strip(" /") if name.startswith(method) else name.strip(" /")
-            if path:
-                safe_name = f"{method}_{path}".replace(" ", "_").replace("/", "_").replace("{", "").replace("}", "").replace("__", "_").strip("_")
-            else:
-                safe_name = method
-            stage_stats[safe_name] = {
-                "p95": (entry.get_response_time_percentile(0.95) or 0) / 1000,
-                "rps": entry.total_rps,
-                "err": entry.fail_ratio,
-            }
-            log.info("  -> safe_name=%r  p95=%.3fs  rps=%.1f  err=%.1f%%",
-                     safe_name, stage_stats[safe_name]["p95"],
-                     stage_stats[safe_name]["rps"], stage_stats[safe_name]["err"] * 100)
-        all_stages[vu_count] = stage_stats
+        all_stages[vu_count] = {
+            name: {"p95": (entry.get_response_time_percentile(0.95) or 0) / 1000,
+                   "rps": entry.total_rps,
+                   "err": entry.fail_ratio}
+            for (_, name), entry in env.stats.entries.items()
+            if name not in ("", "Aggregated")
+        }
+        for name, s in all_stages[vu_count].items():
+            log.info("  %s  p95=%.3fs  rps=%.1f  err=%.1f%%", name, s["p95"], s["rps"], s["err"] * 100)
 
     push_metrics(all_stages)
     env.runner.quit()
