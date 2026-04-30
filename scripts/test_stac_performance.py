@@ -76,6 +76,7 @@ def push_metrics(all_stages):
             ratio = s["p95"] / baseline.get(endpoint, {}).get("p95", s["p95"]) if baseline.get(endpoint, {}).get("p95") else 1.0
             record(
                 {"eodc_e2e_perf_p95_seconds":        s["p95"],
+                 "eodc_e2e_perf_p50_seconds":        s["p50"],
                  "eodc_e2e_perf_rps":                s["rps"],
                  "eodc_e2e_perf_error_rate":         s["err"],
                  "eodc_e2e_perf_vus":                float(vu_count),
@@ -105,13 +106,15 @@ def main():
 
         all_stages[vu_count] = {
             name: {"p95": (entry.get_response_time_percentile(0.95) or 0) / 1000,
+                   "p50": (entry.get_response_time_percentile(0.50) or 0) / 1000,
                    "rps": entry.total_rps,
                    "err": entry.fail_ratio}
             for (_, name), entry in env.stats.entries.items()
             if name not in ("", "Aggregated")
         }
         for name, s in all_stages[vu_count].items():
-            log.info("  %s  p95=%.3fs  rps=%.1f  err=%.1f%%", name, s["p95"], s["rps"], s["err"] * 100)
+            log.info("  %s  p50=%.3fs  p95=%.3fs  rps=%.1f  err=%.1f%%",
+                     name, s["p50"], s["p95"], s["rps"], s["err"] * 100)
 
     push_metrics(all_stages)
     env.runner.quit()
