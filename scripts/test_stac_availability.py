@@ -2,8 +2,9 @@ import os, time, logging, requests
 from datetime import datetime, timezone, timedelta
 from otel_push import record, flush
 
-STAC_URL = os.environ.get("STAC_URL", "https://stac.eodc.eu/api/v1")
-ENV      = os.environ.get("E2E_ENV", "dev")
+STAC_URL    = os.environ.get("STAC_URL",    "https://stac.eodc.eu/api/v1")
+BROWSER_URL = os.environ.get("BROWSER_URL", "https://services.eodc.eu/browser")
+ENV         = os.environ.get("E2E_ENV",     "dev")
 TIMEOUT  = 20
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(message)s")
@@ -29,12 +30,28 @@ def push(probe_name, collection, success, duration, status):
     )
 
 
+def push_browser(url, success, duration, status):
+    record(
+        {"eodc_e2e_browser_reachable":          int(success),
+         "eodc_e2e_browser_duration_seconds":   duration,
+         "eodc_e2e_browser_last_run_timestamp": time.time()},
+        {"env": ENV, "url": url},
+    )
+
+
 def ok(status):
     return 200 <= status < 300
 
 
 def run():
     all_ok = True
+
+    # Browser reachability
+    status, dur, _ = request("get", BROWSER_URL)
+    result = ok(status)
+    log.info("browser_home  %s  http=%d  %.0fms  url=%s", "OK" if result else "FAIL", status, dur * 1000, BROWSER_URL)
+    push_browser(BROWSER_URL, result, dur, status)
+    all_ok = all_ok and result
 
     # Root
     status, dur, _ = request("get", f"{STAC_URL}/")

@@ -20,8 +20,9 @@ jobs:
       - name: Configure environment
         run: |
           echo "PYTHONPATH=$GITHUB_WORKSPACE/scripts" >> $GITHUB_ENV
-          echo "STAC_URL=https://stac.eodc.eu/api/v1" >> $GITHUB_ENV
-          echo "E2E_ENV=prod"                          >> $GITHUB_ENV
+          echo "STAC_URL=https://stac.eodc.eu/api/v1"              >> $GITHUB_ENV
+          echo "BROWSER_URL=https://services.eodc.eu/browser"     >> $GITHUB_ENV
+          echo "E2E_ENV=prod"                                       >> $GITHUB_ENV
           echo "OTEL_ENDPOINT=https://otel.infra.eodc.eu/v1/metrics" >> $GITHUB_ENV
           echo "OTEL_API_KEY=${{ secrets.OTEL_API_KEY }}"           >> $GITHUB_ENV
 
