@@ -1,8 +1,3 @@
-# scripts/conftest.py
-# Pytest plugin hooks for STAC functional tests.
-# Accumulates per-test results and pushes eodc_e2e_functional_* metrics
-# to the OTEL collector at session end.
-
 import os
 import sys
 import time
