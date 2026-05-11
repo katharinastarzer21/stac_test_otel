@@ -46,10 +46,12 @@ def ok(status):
 def run():
     all_ok = True
 
-    # Browser reachability
+    # Browser reachability — frontend must load AND backing STAC API must respond
     status, dur, _ = request("get", BROWSER_URL)
-    result = ok(status)
-    log.info("browser_home  %s  http=%d  %.0fms  url=%s", "OK" if result else "FAIL", status, dur * 1000, BROWSER_URL)
+    stac_status, _, _ = request("get", f"{STAC_URL}/")
+    result = ok(status) and ok(stac_status)
+    log.info("browser_home  %s  http=%d  stac_root=%d  %.0fms  url=%s",
+             "OK" if result else "FAIL", status, stac_status, dur * 1000, BROWSER_URL)
     push_browser(BROWSER_URL, result, dur, status)
     all_ok = all_ok and result
 
