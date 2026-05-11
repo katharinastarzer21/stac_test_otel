@@ -1,0 +1,16 @@
+{
+  "name": "STAC E2E Monitoring",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "postCreateCommand": "pip install requests opentelemetry-sdk opentelemetry-exporter-otlp-proto-http pytest locust shapely",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.pylint"
+      ]
+    }
+  },
+  "remoteEnv": {
+    "PYTHONPATH": "${containerWorkspaceFolder}/scripts"
+  }
+}
