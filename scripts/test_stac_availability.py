@@ -46,14 +46,8 @@ def ok(status):
 def run():
     all_ok = True
 
-    # Browser reachability — frontend must load AND backing STAC API must respond
-    status, dur, _ = request("get", BROWSER_URL)
-    stac_status, _, _ = request("get", f"{STAC_URL}/")
-    result = ok(status) and ok(stac_status)
-    log.info("browser_home  %s  http=%d  stac_root=%d  %.0fms  url=%s",
-             "OK" if result else "FAIL", status, stac_status, dur * 1000, BROWSER_URL)
-    push_browser(BROWSER_URL, result, dur, status)
-    all_ok = all_ok and result
+    # Browser frontend check — push deferred until collections result is known
+    browser_status, browser_dur, _ = request("get", BROWSER_URL)
 
     # Root
     status, dur, _ = request("get", f"{STAC_URL}/")
@@ -64,12 +58,19 @@ def run():
 
     # Collections list
     status, dur, resp = request("get", f"{STAC_URL}/collections")
-    result = ok(status)
-    log.info("collections_list  %s  http=%d  %.0fms", "OK" if result else "FAIL", status, dur * 1000)
-    push("collections_list", "_", result, dur, status)
-    all_ok = all_ok and result
+    collections_ok = ok(status)
+    log.info("collections_list  %s  http=%d  %.0fms", "OK" if collections_ok else "FAIL", status, dur * 1000)
+    push("collections_list", "_", collections_ok, dur, status)
+    all_ok = all_ok and collections_ok
 
-    if not result:
+    # Browser is only up if frontend loads AND collections are reachable
+    browser_result = ok(browser_status) and collections_ok
+    log.info("browser_home  %s  http=%d  collections=%d  %.0fms  url=%s",
+             "OK" if browser_result else "FAIL", browser_status, int(collections_ok), browser_dur * 1000, BROWSER_URL)
+    push_browser(BROWSER_URL, browser_result, browser_dur, browser_status)
+    all_ok = all_ok and browser_result
+
+    if not collections_ok:
         log.error("Cannot list collections — skipping per-collection probes")
         flush()
         return all_ok
@@ -78,7 +79,6 @@ def run():
     log.info("Found %d collections", len(col_ids))
 
     for col_id in col_ids:
-
         # Collection detail
         status, dur, _ = request("get", f"{STAC_URL}/collections/{col_id}")
         result = ok(status)
