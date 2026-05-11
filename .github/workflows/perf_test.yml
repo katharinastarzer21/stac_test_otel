@@ -33,7 +33,7 @@ jobs:
 
       - name: Configure environment
         run: |
-          STAC_ENV="${{ github.event.inputs.stac_env }}"
+          STAC_ENV="${{ github.event.inputs.stac_env || 'prod' }}"
           if [ "$STAC_ENV" = "prod" ]; then
             echo "STAC_URL=https://stac.eodc.eu/api/v1"     >> $GITHUB_ENV
           else
