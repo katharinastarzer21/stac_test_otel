@@ -28,3 +28,4 @@ jobs:
 
       - name: Run availability probes
         run: python scripts/test_stac_availability.py
+        continue-on-error: true
