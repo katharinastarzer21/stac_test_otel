@@ -26,6 +26,36 @@ jobs:
           echo "OTEL_ENDPOINT=https://otel.infra.eodc.eu/v1/metrics" >> $GITHUB_ENV
           echo "OTEL_API_KEY=${{ secrets.OTEL_API_KEY }}"           >> $GITHUB_ENV
 
+      - name: Restore last state
+        uses: actions/cache@v4
+        with:
+          path: .stac_last_state
+          key: stac-prod-state-${{ github.run_id }}
+          restore-keys: stac-prod-state-
+
+      - name: Read last state
+        id: last_state
+        run: |
+          if [ -f .stac_last_state ]; then
+            echo "last=$(cat .stac_last_state)" >> $GITHUB_OUTPUT
+          else
+            echo "last=unknown" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run availability probes
+        id: monitor
         run: python scripts/test_stac_availability.py
         continue-on-error: true
+
+      - name: Save current state
+        run: echo "${{ steps.monitor.outcome }}" > .stac_last_state
+
+      - name: Trigger GitLab remediation (first failure)
+        if: steps.monitor.outcome == 'failure' && steps.last_state.outputs.last != 'failure'
+        env:
+          GITLAB_URL: ${{ secrets.GITLAB_URL }}
+          GITLAB_PROJECT_ID: ${{ secrets.GITLAB_PROJECT_ID }}
+          GITLAB_ACCESS_TOKEN: ${{ secrets.GITLAB_ACCESS_TOKEN }}
+          GITLAB_REF: ${{ secrets.GITLAB_REF }}
+          GITLAB_JOB_NAME: ansible-prod
+        run: python scripts/trigger_gitlab_pipeline.py

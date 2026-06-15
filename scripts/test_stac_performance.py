@@ -17,7 +17,7 @@ from otel_push import record, flush
 
 
 STAC_URL = os.environ.get("STAC_URL", "https://stac.eodc.eu/api/v1")
-ENV = os.environ.get("E2E_ENV", "dev")
+ENV = os.environ.get("E2E_ENV")
 
 VU_STAGES = [10, 25, 50, 100]
 STAGE_SECS = 60
