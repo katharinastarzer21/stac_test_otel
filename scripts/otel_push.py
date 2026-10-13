@@ -5,7 +5,7 @@ from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 from opentelemetry.sdk.resources import Resource
 
-OTEL_ENDPOINT = os.environ.get("OTEL_ENDPOINT", "https://otel.infra.eodc.eu/v1/metrics")
+OTEL_ENDPOINT = os.environ.get("OTEL_ENDPOINT", "https://otel.observability.eodc.eu/v1/metrics")
 OTEL_API_KEY  = os.environ.get("OTEL_API_KEY")
 
 RESOURCE = Resource(attributes={

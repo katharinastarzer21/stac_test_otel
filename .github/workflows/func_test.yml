@@ -34,7 +34,7 @@ jobs:
           echo "PYTHONPATH=$GITHUB_WORKSPACE/scripts"       >> $GITHUB_ENV
           echo "STAC_URL=https://dev.stac.eodc.eu/api/v1"  >> $GITHUB_ENV
           echo "E2E_ENV=dev"                                >> $GITHUB_ENV
-          echo "OTEL_ENDPOINT=https://otel.infra.eodc.eu/v1/metrics" >> $GITHUB_ENV
+          echo "OTEL_ENDPOINT=https://otel.observability.eodc.eu/v1/metrics" >> $GITHUB_ENV
           echo "OTEL_API_KEY=${{ secrets.OTEL_API_KEY }}"           >> $GITHUB_ENV
           echo "INGEST_URL=${{ secrets.INGEST_URL }}"       >> $GITHUB_ENV
           echo "INGEST_USER=${{ secrets.INGEST_USER }}"     >> $GITHUB_ENV
