@@ -1,8 +1,7 @@
 name: Functional Tests (STAC)
 
 on:
-  schedule:
-    - cron: "0 2 * * *"
+
   push:
     branches:
       - main
