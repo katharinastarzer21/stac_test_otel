@@ -1,8 +1,6 @@
 name: E2E Monitor STAC (prod)
 
 on:
-  schedule:
-    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 jobs:
